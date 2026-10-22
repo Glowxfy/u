@@ -1,123 +1,29 @@
 return function(context)
-local env = context.env
-local playerGui = context.playerGui
-local HTTP = context.HTTP
-local TS = context.TS
-
-local IMAGE_ASSET_OVERRIDES = {
-    Enchanted = '', HeavenHell = '', Temple = '', Cherry = '', Cosmic = '', Prehistoric = '',
-    AbyssOcean = '', Volcano = '', Snow = '', Jungle = '', Desert = '', Lake = '',
-    Forest = '', SafeZone = '', HomeEgg = ''
-}
-local EMBEDDED_BIOME_IMAGES = {}
-
-local function getExecutorAPI(name)
-    if type(env[name]) == 'function' then return env[name] end
-    if name == 'writefile' then return type(writefile) == 'function' and writefile or nil end
-    if name == 'readfile' then return type(readfile) == 'function' and readfile or nil end
-    if name == 'isfile' then return type(isfile) == 'function' and isfile or nil end
-    if name == 'getcustomasset' then
-        if type(getcustomasset) == 'function' then return getcustomasset end
-        if type(syn) == 'table' and type(syn.getcustomasset) == 'function' then return syn.getcustomasset end
-        if type(syn) == 'table' and type(syn.asset) == 'function' then return syn.asset end
-    end
-    if name == 'getsynasset' then return type(getsynasset) == 'function' and getsynasset or nil end
-    return nil
-end
-
-local B64_CHARS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/'
-local B64_LOOKUP = {}
-for i = 1, #B64_CHARS do
-    B64_LOOKUP[string.byte(B64_CHARS, i)] = i - 1
-end
-
-local function decodeBiomeBase64(source)
-    if type(source) ~= 'string' or #source % 4 ~= 0 then return nil end
-    local decoder
-    if type(crypt) == 'table' and type(crypt.base64) == 'table' then
-        decoder = crypt.base64.decode
-    elseif type(syn) == 'table' and type(syn.crypt) == 'table' and type(syn.crypt.base64) == 'table' then
-        decoder = syn.crypt.base64.decode
-    end
-    if type(decoder) == 'function' then
-        local ok, result = pcall(decoder, source)
-        if ok and type(result) == 'string' and #result > 0 then return result end
-    end
-    local chunks = {}
-    for i = 1, #source, 4 do
-        local a = B64_LOOKUP[string.byte(source, i)]
-        local b = B64_LOOKUP[string.byte(source, i + 1)]
-        local c = B64_LOOKUP[string.byte(source, i + 2)]
-        local d = B64_LOOKUP[string.byte(source, i + 3)]
-        if a == nil or b == nil then return nil end
-        local number = a * 262144 + b * 4096 + (c or 0) * 64 + (d or 0)
-        local x = math.floor(number / 65536) % 256
-        local y = math.floor(number / 256) % 256
-        local z = number % 256
-        chunks[#chunks + 1] = (d ~= nil and string.char(x, y, z)) or (c ~= nil and string.char(x, y)) or string.char(x)
-    end
-    return table.concat(chunks)
-end
-
-local BIOME_IMAGE_ASSETS = {}
-local function resolveBiomeImage(routeId)
-    if BIOME_IMAGE_ASSETS[routeId] then return BIOME_IMAGE_ASSETS[routeId] end
-
-    local imageId = IMAGE_ASSET_OVERRIDES[routeId]
-    if type(imageId) == 'string' and imageId ~= '' then
-        local uri = imageId:match('^%d+$') and ('rbxassetid://' .. imageId) or imageId
-        BIOME_IMAGE_ASSETS[routeId] = uri
-        return uri
-    end
-
-    local image = EMBEDDED_BIOME_IMAGES[routeId]
-    if not image then return nil end
-
-    local assetLoader = getExecutorAPI('getcustomasset') or getExecutorAPI('getsynasset')
-    local writeImage = getExecutorAPI('writefile')
-    local fileExists = getExecutorAPI('isfile')
-    if not assetLoader or not writeImage then return nil end
-
-    local path = image.file or (cleanName(routeId) .. '.png')
-    local canUse = true
-    if type(fileExists) == 'function' then
-        local ok, exists = pcall(fileExists, path)
-        if ok and exists then canUse = false end
-    end
-    if canUse then
-        local data = image.data and decodeBiomeBase64(image.data)
-        if not data then return nil end
-        pcall(writeImage, path, data)
-    end
-    local ok, uri = pcall(assetLoader, path)
-    if ok and type(uri) == 'string' then
-        BIOME_IMAGE_ASSETS[routeId] = uri
-        return uri
-    end
-    return nil
-end
-
-local C = {
-    white   = Color3.fromRGB(247, 250, 255),
-    muted   = Color3.fromRGB(150, 162, 184),
-    border  = Color3.fromRGB(18, 22, 33),
-    dark    = Color3.fromRGB(14, 18, 29),
-    inner   = Color3.fromRGB(23, 28, 42),
-    slate   = Color3.fromRGB(27, 33, 48),
-    cyan    = Color3.fromRGB(87, 214, 255),
-    cyanHi  = Color3.fromRGB(112, 232, 255),
-    cyanLo  = Color3.fromRGB(50, 116, 158),
-    greenHi = Color3.fromRGB(126, 243, 180),
+local env=context.env
+local playerGui=context.playerGui
+local HTTP=context.HTTP
+local TS=context.TS
+local IMAGE_ASSET_OVERRIDES={Enchanted='',HeavenHell='',Temple='',Cherry='',Cosmic='',Prehistoric='',AbyssOcean='',Volcano='',Snow='',Jungle='',Desert='',Lake='',Forest='',SafeZone='',HomeEgg=''}local EMBEDDED_BIOME_IMAGES={HomeEgg={file="ixurt_home_logo_320.jpg",data="/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAMCAgICAgMCAgIDAwMDBAYEBAQEBAgGBgUGCQgKCgkICQkKDA8MCgsOCwkJDRENDg8QEBEQCgwSExIQEw8QEBD/2wBDAQMDAwQDBAgEBAgQCwkLEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBD/wAARCAFAAUADASIAAhEBAxEB/8QAHQABAAICAwEBAAAAAAAAAAAAAAkKBwgEBQYDAf/EAEoQAAIBAwMCAgUHBgsGBwAAAAABAgMEBQYHEQghEjEJEyIyQRQVQlFhcbQWIzM4UrEXGBkkJjQ2U1Z2gURVcnWR1GJmlaHS0/H/xAAUAQEAAAAAAAAAAAAAAAAAAAAA/8QAFBEBAAAAAAAAAAAAAAAAAAAAAP/aAAwDAQACEQMRAD8AiqAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA9Rt9Z7b3+Z+S7mZzP4jG1ElG8w+Po3tSlLnu5UalWl4o/8MufsYHlwSGbV+jN2b3p0tT1ptt1TVM3iZyVOc6GnYKrb1OOfV1qUrhTpT47+GSXK7rldz1v8jnp98tb+ZDj4f0cp/wDcARjAk5foc9PpcrfzIN/Bfk5T/wC4MYb5dA2wHTriaOQ3O6pr2zubuDqWWMtdMQr394l25p0VcpqPPbxzcYc9vFz2A0VB2eo4acp5evDSdfJVsZFpUKmRpU6VeS+uUKcpRj9yk/vZ1gAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABsH0I7q6o2y6l9F0sHf142Gp8ra4HLWcZ8Uru2uKiprxLybhKSnF+ace3ZtOc7hp+FtdvMr/dLnP8ZLa3j/GGI/F0ywE/OXH1sDi5W/hisXe5WdD1qsrWtdOnzx41Tpyn4efhz4eOftK8G5+5Wrt3Nc5fcLXGUq3+XzNxKvWnOTcYRfuUoL6NOEeIxiuySSLCmrf7JZ3j/dN7+HqFcOXn/ov3AfgAAAAAAAAAAHcaS0fqbXect9N6Sw1xk8jcqUoUaKXaEYuU6k5PiMKcIpylOTUYxTlJpJsyP059Lm6XUvqZ4fQ2MVDF2U4/O2cu042WOpvvzOX0ptcuNOPMn9i5kvcb9bibYbU4XIdOvTNdO7xMuKGsNbS4+WaorwfLt6cl+jsISXanB+GpKKlJySTkGvOoMbY4fJ1cZY5ajklbfm6l1bp+pqVF73qm+8oc9lJpeLz44aOuHn3YAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAyf0u9+pHa5f+cMR+LplgR+8/sbK/fS536ktrf8AOGI/F0ywI+0n94HVatXOk86nLhfNV7+HqFcOUZc+6/JfD7CefevfOpsXnLW43U04rna7Ubjj56jsKU6k8JdTi4ujf0Vy529VcuFanw0/FCUW1Fv5YzpK6Q81jLXK4TZDQeQsL6jC4tru2tvW0q9KS5jOE4z4lFrumgIHPDL9l/8AQ/GmvNcE9z6NelRLw/wAaM5+v5FL/wCZrD10ej60hkdCS3K6e9FWmFy+m7eU8hgsZSkqeSs48ylVpw5f5+n3fC9+HK96MVIIrwH2fcAADm4XC5fUeVtMFgMZdZHI31WNC1tLWjKrWrVJPiMIQim5Nv4IDhJc9kbmdHPo7tYb7Sste7lu90zoaUo1LeHgcL/Mx57K3jJfm6T/AL6SfP0FLzWw/R76NDFaJdhuT1D2Vrlc9FRuLPTMnGraWEvOMrprmNeqv7tc04vz8b7L7ekN654aAtL7YnZ7L+HVNxB2+fy9rPh4mk1w7SjJeVxKPaUl+ii/Cvbb8AYy62erLRu3OlqvSV0t21lg8HjoTsNRX2KfhpyflUs6NRNubbT9fWbcpvmHLXi5jzb57sNuT5b7gAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAMn9Lv6yO1vH+MMR+LplgVriT5+tlfrpd/WR2u/zhiPxdMsCN8yf3sDzW5uAwuqtu9T6e1DibfJY6+w15TuLa4j4qdSKozkuV9alGMk13TSa4aRFn6O7rSe0Oco7L7nZiUND5quvm68rz5jhb2b8237tvUk/b+EJNT7Jz5lb1a+NJ53/lV7+HqFcNvh8r6l+4Cylwo/f9/ITa4ak00+U18GR8ejY6z/ytsrLp23Sy3OasaSpaWyNxPve0IL+o1JPzqwS/NP6UF4POMfFIP73deQEVfpIui38hsjd9QW12JUNN5Gv4tRY63p8Rxl1Ul2uYRXlQqyftJdoVH+zNJaAFknKYvG5zG3WGzFhb31hfUZ211a3FNTpV6M4uM6c4vtKLTaa+0h+6j+iTTOyHUFp6y1DqS+wWzesMoqVDUSt/lMsSpd52tblpeKH0akvOn7fEnCcQNd9lNidyeoDWNLRe22BnfXT8M7q5qN07Wxot8etr1eOIQ/6yk+0VJ9iY/pV6LdtemLERv7OlTz2tLml4L7UNxS4lFNe1StYPn1FL6378/pPj2Vk/aHaTbjZfRVroza3AW2OxEVGtKpTkqtS9qOK/nFWt51pyXdS8uGlFKPCMH9cHWhh+mjS70xpWrbX24uatnKwtnxOGMoy5SvK8fr8/V037zXifsr2g8r1+dcNDYnFV9qdschSq7g5OhxdXVNqSwFvOPab+HymSfMIv3E/G+/gTh/urq5vbmreXlxUr1685VKtWpNynOcny5Sb7ttttt+bOTm81ltR5e9z+eyNxf5HI153V3dXFR1KterNuUpzk+7k222zhAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAGT+lz9ZLa3/OGI/F0ywHLu397K/nS7x/GR2u5/xhiPxdMsCPvJ/ewOo1d20nneP91Xv4eoVxJef+i/cWO9XL+ied/5Ve/h5lcSXn/ov3Afawvr3F3tvksdd1rW7tasK9CvRm4VKVSLUozjJd4yTSaa7poms6FOr+x6l9DPT2p7qlR3D03bx+dqfKj85UE1GN9Tj9r4VWK92bT7RmkoTDI3T5f7xYfdXD53YmwyV5q/Feuv7WjY0HWlOjSpynXjOC7TpOmpKcX2afHm0BYOfHkvI8rujtnpDeLQeW2311jfluFy9H1daMWlUpTXenWpSfu1IS4lGX1rh8ptPyvTd1B6S6ktsrPX2mErW6p+G1zOLlPxVMdfKPMqT+Lg/ehP6Uf/ABKSWU/s+IEbz6pt1OgbTWo+nfdLA1tV5HDW0Z7bZ2f9Uu7CcnGKuOX4nTpeaguZKUZUm1HwyUc2sdY6m3A1Rk9Z6xzNzlc1l7iV1eXlxLmdWpL4/UklwlFcJJJJJJInZ6pOmrSXU3tnc6NzXqrLM2rldYHMOHinYXXHHfjvKjU4UakfiuJL2oxILtwNBaq2w1lltBa1xNXG5rC3Era6t6nwku6lF+UoSTUoyXaUWmuzA88AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADJ/S7+sjtb25/phiPxdMsCtcyfD7csg/6AtktW7r9ROl83ibKvTwmjMnbZzMZHwP1VvChNVKdLnydSpOKjGPnx4peUWyb/AJbfdd337AdTq/8Aslne/HGJvfw9Qrhy8/8ARfuLHer/AOyedSXf5pvfw9QrlWlld5G8oY+wtqtzc3M4UaNGjBznUqSaUYxiu8pNtJJd22BztKaV1FrjUeO0lpPEXOUzGWuIWtnZ28PFUrVZPhRS/wDdt9kk2+Emybjo36R9O9LuhlC5lbZHXGZpQnm8vS7qHlJWlvJ91Rg/N9nUmvE+ygo+M6DOiy36dNPLXevrGjW3Fzdt4aqfE1hbaa720H5etkv0s1/wLspOW3E5wpU5VKk4xp04ucpSaSjFLltt9kkuW2+yA0f6g9Ean6O92pdXuyuGnc6QzdSNvuNpe2XhpOE5/wBdpxXaHM34vFx+bqvn3KsktxtD620ruPpDE650TmKWUwubto3VndU+3ii+zjKPnGcZJxlF94yi0/I0G60fSTafsrHLbS7A1LHOVb+3q2GW1HWoxr2dOE4uFSla05pxrtptOrJOC+ipe8tfvR/9ZVXp71c9Ba7vpy2+1JcR9fOXMvme7fEVdwX7DSUasV5xSku8OGEy3HBqX18dHNv1E6O/LXRVlShuFpu2l8kUUovMWseZOzm/7xct0pP4twfaScdsqFalc0KdzQq06tKtCNSlUpyUozhJJxlGS7NNNNNdmmmfrSfZrswK2F1a3Nlc1bS8oVKFehOVOpSqQcZwnF8OMk+6aaaafkz5knHpLOjKWUpZDqT2wxUVcUIeu1bjreH6WC7PI04r6SX6ZLzXFT9tkY4AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD0+3+b0JgMz84a+0Nc6rsoL2LCnmJ46nKXx9ZOnTlNry7RcH9p5gAb8aH9KhZbaabttI7f9LuktP4m05dO1sMtXpwcn5zl+b8U5v4zk3J/Fnfr0x2qEmlsLg//AF24/wDrI6Aly+EBIZmPS9aozWJvcRHYrC0vltrWtZVI5u4k4qpTlDxJer+Hi54Mpejw6H1tzZ2e+u7mH41Zd01UwWJuqffE0ZR7XNWL8rmUX7MfOnF8v237HjPR4dCip/N3UDvRhn4l6u80vhLqn2/ahfXEH8PJ0qb8+1RrjwJ7a9UHV9tf0x4OdXUl2sxqq8petx2nbWqvlNfnyq1pd/UUefpyXMu/gjLvwGTtw9ytC7S6SvNa7i6ktMHhLFfnLm4b5nPjmNKnBe1UqS47Qim393LURfV76QXXPUDO80PoZXWl9vpS8ErRTSvMpFfSu5xfCg/NUYvwr6Tm+GsK7/dR26HUfq6WqdxM06lKh4oY7F23MLLHUm/co0+Xw328U5czl9Jvtxi8B5hdnygAJLPRo9ZyfyDpr3Sy3C/Q6QyVxPybfbHVJP4Pu6Lfk+afxglJS0/qf1dytbQr1ratC4t6s6dWlJThOEnGUZJ8pprumn8SZ30fPVzcdROhK+j9b1qlTXOkLen8tumu2Ts21CndP6qqfEai+LcZr3mkG2U6cKkJUqsIVISi4yjOKlGSfZpp9mmuzT7NEPHpCejOexOqHuft3i5/wf6huXGVGnHmOGvZ8ydu/qoz4bpP4cOD7xTlMSnz5HUax0jprXul8povWGJoZTDZm2naXtpWXs1KcvqfnGSfEoyXeMkmu6ArhAzj1bdLuqOl/cepp6+da+03lHO50/lpQ4V1bp94Ta7KtT5UZx+6S9mSMHAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAly+AHmSFej36DnqyeP363rwnGn6fF1p3CXVPj5yku8buvF/7OuOYxf6RrxP2F7fhuj3pO0WsB/Gd6qb6209tliX6/GWuR5is5Wi/Zbh71ShyuFCKcq0l4UvApN8bq89IfrLe6nd7d7XxudK6AX83moP1V9lqS7JV3B8UqPCXFCD447ScuyQbKdX/pLsDoCV/t30+3dnnNSx5oXmouI1rDHS8nG3Xu3FVft96UX5eN+UWuo9SZ/V+cvdTaozN5lcrkqzr3d7eVpVa1eo/OUpS7t//h1rfPdgAAAAAAG93QLvP0rdNGMyutNf7jZWvrHUdrCzqWlngbmpb4+0jUU3T9ZwvWVJSjBykvZSikueWzREATVfynHSAvLWue8/8O3B+x9Jv0fcNy1tnufq/Jy47kKgAl53W63egLezRd5obcjJ5nKYu59uEXp65hWtqyTUa9Gou9OpHl8SXmm0002nGDu/pravTmpHT2g3IudW4CupTo1L3E1bC7tlz2p1YyXgm+PpQfD492PkeE5AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAzjtJorbbQOMtN5OoK1qZDEvmtp7RlvVVO81JVi/ZqVn52+PUlxKq14qrThTUuJyjhK2ru2r07hU6dR05KSjUj4ovj4NPs19hyMxmcrn8hWyuav615d12vWVq03KTUUoxX2JRSikuySSSSXAGRd+eo7czqF1BSyut8pCnjcfH1GHwljH1OOxVuklGlb0V2XEUk5PmTSXL4SSxcAACXPZGUNobDE3eh93bjJWllWr2ej6NaynXhCU6VZ5fHxcqTl3U/BKa5j38MpLybOu2Hsc3kd2dP2eAw+CylWpcS+UW2eUFjZWahJ3LupT7U6MaPrJSqL2oJeKDUlEDwA4b8jOHU3iNFYytpWps/bWdTbatj6vzDklBfL76uqr+WPIScVNXEKjUVCSUY0VQcVxNt/Dbvb+93M2NzmC0NpujmdYWGqrC8lQt403frGztLinKcE2pyoqt6vx+HlRcoOXHZgYW4HBk3qSjpqlvVqO00lDFxxtpO2tIrGer+S+tpWtGnX9W6fsSXroVPaj2k+Wm+eTYja610DLbTb/ABeWraWvldaGz2TyOk5aZtquRz9aneZBQdLIygp0a8Y04SilVU1G39mM24wkGlQOfhsve4DL2uZx3qPlVnUjWouvbU7in415OVOrGUJr7JRa+tGXOqXUt3k9X4jDRtcFbWVvpzBX8aeLxFlZp3N1irWrcSlK3pwcnKpKUnGTai2+EvIDCgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAJ8eQ54AActhNoAAE2vIAAG+e7AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA//9k="}}local function getExecutorAPI(name)if type(env[name])=='function'then return env[name]end if name=='writefile'then return type(writefile)=='function'and writefile or nil end if name=='isfile'then return type(isfile)=='function'and isfile or nil end if name=='getcustomasset'then if type(getcustomasset)=='function'then return getcustomasset end if type(syn)=='table'and type(syn.getcustomasset)=='function'then return syn.getcustomasset end if type(syn)=='table'and type(syn.asset)=='function'then return syn.asset end end if name=='getsynasset'then return type(getsynasset)=='function'and getsynasset or nil end return nil end local B64_CHARS='ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/'local B64_LOOKUP={}for i=1,#B64_CHARS do B64_LOOKUP[string.byte(B64_CHARS,i)]=i-1 end local function decodeBiomeBase64(source)if type(source)~='string'or#source%4~=0 then return nil end local decoder if type(crypt)=='table'and type(crypt.base64)=='table'then decoder=crypt.base64.decode elseif type(syn)=='table'and type(syn.crypt)=='table'and type(syn.crypt.base64)=='table'then decoder=syn.crypt.base64.decode end if type(decoder)=='function'then local ok,result=pcall(decoder,source)if ok and type(result)=='string'and#result>0 then return result end end local chunks={}for i=1,#source,4 do local a=B64_LOOKUP[string.byte(source,i)]local b=B64_LOOKUP[string.byte(source,i+1)]local c=B64_LOOKUP[string.byte(source,i+2)]local d=B64_LOOKUP[string.byte(source,i+3)]if a==nil or b==nil then return nil end local number=a*262144+b*4096+(c or 0)*64+(d or 0)local x=math.floor(number/65536)%256 local y=math.floor(number/256)%256 local z=number%256 chunks[#chunks+1]=(d~=nil and string.char(x,y,z))or(c~=nil and string.char(x,y))or string.char(x)end return table.concat(chunks)end local BIOME_IMAGE_ASSETS={}local function resolveBiomeImage(routeId)if BIOME_IMAGE_ASSETS[routeId]then return BIOME_IMAGE_ASSETS[routeId]end local imageId=IMAGE_ASSET_OVERRIDES[routeId]if type(imageId)=='string'and imageId~=''then local uri=imageId:match('^%d+$')and('rbxassetid://'..imageId)or imageId BIOME_IMAGE_ASSETS[routeId]=uri return uri end local image=EMBEDDED_BIOME_IMAGES[routeId]if not image then return nil end local assetLoader=getExecutorAPI('getcustomasset')or getExecutorAPI('getsynasset')local writeImage=getExecutorAPI('writefile')if not assetLoader then return nil end local path=image.file local exists=getExecutorAPI('isfile')local filePresent=false if exists then local ok,present=pcall(exists,path)filePresent=ok and present==true end if writeImage and not filePresent then local bytes=decodeBiomeBase64(image.data)if bytes then local success,err=pcall(writeImage,path,bytes)if not success then return nil end end end local ok,contentUri=pcall(assetLoader,path)if(not ok or type(contentUri)~='string'or contentUri=='')and writeImage and filePresent and type(image.data)=='string'then local bytes=decodeBiomeBase64(image.data)if bytes then local rewrote=pcall(writeImage,path,bytes)if rewrote then ok,contentUri=pcall(assetLoader,path)end end end if ok and type(contentUri)=='string'and contentUri~=''then BIOME_IMAGE_ASSETS[routeId]=contentUri image.data=nil return contentUri end return nil end local C = {
+    white   = Color3.fromRGB(236, 240, 247),
+    muted   = Color3.fromRGB(144, 151, 166),
+    border  = Color3.fromRGB(30, 33, 41),
+    dark    = Color3.fromRGB(17, 19, 25),
+    inner   = Color3.fromRGB(25, 28, 36),
+    slate   = Color3.fromRGB(20, 22, 29),
+    cyan    = Color3.fromRGB(101, 157, 238),
+    cyanHi  = Color3.fromRGB(155, 195, 255),
+    cyanLo  = Color3.fromRGB(47, 76, 119),
+    greenHi = Color3.fromRGB(114, 220, 168),
 }
 
 local PALETTES = {
-    cyan  = {Color3.fromRGB(34, 74, 122), Color3.fromRGB(61, 144, 216), Color3.fromRGB(30, 71, 120)},
-    gray  = {Color3.fromRGB(41, 47, 61), Color3.fromRGB(58, 64, 82), Color3.fromRGB(25, 30, 40)},
-    green = {Color3.fromRGB(30, 108, 93), Color3.fromRGB(61, 180, 144), Color3.fromRGB(24, 73, 63)},
-    red   = {Color3.fromRGB(117, 47, 77), Color3.fromRGB(187, 73, 118), Color3.fromRGB(89, 35, 56)},
+    cyan  = {Color3.fromRGB(46, 84, 145), Color3.fromRGB(65, 115, 192), Color3.fromRGB(34, 65, 105)},
+    gray  = {Color3.fromRGB(34, 37, 47), Color3.fromRGB(44, 48, 59), Color3.fromRGB(27, 30, 38)},
+    green = {Color3.fromRGB(35, 102, 80), Color3.fromRGB(48, 142, 109), Color3.fromRGB(29, 77, 60)},
+    red   = {Color3.fromRGB(101, 49, 62), Color3.fromRGB(154, 63, 83), Color3.fromRGB(81, 41, 54)},
     gold  = {Color3.fromRGB(111, 84, 34), Color3.fromRGB(188, 142, 58), Color3.fromRGB(93, 68, 27)},
     backgroundLayers = {},
-    navIdleColors = {Color3.fromRGB(34, 43, 61), Color3.fromRGB(47, 57, 81), Color3.fromRGB(60, 72, 101), Color3.fromRGB(26, 31, 43)},
+    navIdleColors = {Color3.fromRGB(30, 33, 42), Color3.fromRGB(38, 42, 54), Color3.fromRGB(40, 44, 56), Color3.fromRGB(24, 26, 34)},
     draggingWindow = false,
 }
 
@@ -153,7 +59,7 @@ local function normalSettings(t)
     return out
 end
 
-function cleanName(s)
+local function cleanName(s)
     s = tostring(s or ''):gsub('[%c]', ''):gsub('^%s+', ''):gsub('%s+$', '')
     return s:sub(1, 28)
 end
@@ -353,6 +259,11 @@ local function beveled(parent, name, x, y, w, h, theme, opts)
     opts = opts or {}
     local pal = PALETTES[theme] or PALETTES.gray
     local z = opts.z or 15
+    if opts.nav then
+        local row = math.floor((y - 13) / 86 + 0.5)
+        if parent and parent.Name == 'RightNavigation' then row = row + 5 end
+        x, y, w, h = 7, 17 + row * 51, 179, 45
+    end
 
     local holder = new('Frame', parent, {
         Name = 'Button_' .. name,
@@ -394,7 +305,7 @@ local function beveled(parent, name, x, y, w, h, theme, opts)
         Position = UDim2.fromOffset(1, 1),
         Size = UDim2.new(1, -2, 0.42, 0),
         BackgroundColor3 = C.white,
-        BackgroundTransparency = 0.90,
+        BackgroundTransparency = 0.965,
         BorderSizePixel = 0,
         ZIndex = z + 3,
     })
@@ -421,15 +332,21 @@ local function beveled(parent, name, x, y, w, h, theme, opts)
         corner(activeRail, 3)
     end
 
-    local iconAccent = new('Frame', face, {
-        Position = UDim2.fromOffset(opts.nav and 18 or 10, 11),
-        Size = UDim2.fromOffset(opts.nav and 8 or 0, h - 27),
-        BackgroundColor3 = Color3.fromRGB(203, 244, 255),
-        BackgroundTransparency = opts.nav and 0.52 or 1,
-        BorderSizePixel = 0,
-        ZIndex = z + 4,
-    })
-    if opts.nav then corner(iconAccent, 4) end
+    local iconAccent
+    if opts.nav then
+        iconAccent = new('TextLabel', face, {
+            Name = 'TabGlyph',
+            Position = UDim2.fromOffset(12, 10),
+            Size = UDim2.fromOffset(28, 21),
+            Text = name == 'HOME' and '⌂' or name == 'TELEPORT' and '➤' or name == 'EXPLOITS' and '⚡' or name == 'AUTO STEAL' and '◈' or name == 'AUTO FARM' and '◇' or name == 'WINDOWS' and '▣' or name == 'SETTINGS' and '⚙' or name == 'PREFERENCES' and '◉' or '▤',
+            Font = Enum.Font.GothamBold,
+            TextSize = 19,
+            TextXAlignment = Enum.TextXAlignment.Center,
+            TextColor3 = C.muted,
+            BackgroundTransparency = 1,
+            ZIndex = z + 4,
+        })
+    end
 
     local shine
     if opts.shimmer then
@@ -447,11 +364,26 @@ local function beveled(parent, name, x, y, w, h, theme, opts)
         table.insert(buttonsWithShine, { item = shine, width = w, offset = #buttonsWithShine / 2.7 })
     end
 
-    local caption = label(face, name, opts.nav and 28 or 0, 0, opts.nav and (w - 38) or w, h - 5, opts.fontSize or 16, {
+    local caption = label(face, name, opts.nav and 49 or 0, 0, opts.nav and (w - 55) or w, h - 5, opts.nav and 13 or (opts.fontSize or 15), {
         align = opts.nav and Enum.TextXAlignment.Left or Enum.TextXAlignment.Center,
         z = z + 5,
-        font = opts.font or Enum.Font.GothamBold,
+        font = opts.font or Enum.Font.GothamMedium,
     })
+
+    if opts.nav then
+        caption.Position = UDim2.fromOffset(50, 4)
+        caption.Size = UDim2.fromOffset(w - 57, 20)
+        local subtitles = {
+            HOME = 'Your overview', TELEPORT = 'Waypoints & routes',
+            EXPLOITS = 'Tools & utilities', ['AUTO STEAL'] = 'Egg automation',
+            ['AUTO FARM'] = 'Coming soon', WINDOWS = 'Live information',
+            SETTINGS = 'Features & toggles', PREFERENCES = 'Appearance',
+            CONFIGS = 'Save your profiles',
+        }
+        label(face, subtitles[name] or 'IXURT module', 50, 22, w - 58, 15, 10, {
+            z = z + 5, color = C.muted, outline = false, font = Enum.Font.Gotham,
+        })
+    end
 
     local activeTween
     local function animate(value, duration)
@@ -471,6 +403,14 @@ local function beveled(parent, name, x, y, w, h, theme, opts)
     end)
     face.MouseButton1Down:Connect(function() animate(0.96, 0.08) end)
     face.MouseButton1Up:Connect(function() animate(1.018) end)
+    if opts.nav then
+        face.Activated:Connect(function()
+            if not face.Parent then return end
+            local title = parent and parent.Parent and parent.Parent:FindFirstChild('DragHeader')
+            title = title and title:FindFirstChild('IXURTSectionTitle')
+            if title then title.Text = name end
+        end)
+    end
 
     local function palette(value)
         if opts.nav and value ~= 'cyan' then
@@ -485,8 +425,8 @@ local function beveled(parent, name, x, y, w, h, theme, opts)
             setPalette({ gradient = grad, bottom = shadow, face = face }, value)
         end
         if activeRail then activeRail.Visible = value == 'cyan' end
-        if iconAccent then iconAccent.BackgroundTransparency = value == 'cyan' and 0.12 or (opts.nav and 0.52 or 1) end
-        caption.TextColor3 = value == 'cyan' and C.white or (opts.nav and Color3.fromRGB(205, 217, 235) or C.white)
+        if iconAccent then iconAccent.TextColor3 = value == 'cyan' and C.cyanHi or C.muted end
+        caption.TextColor3 = value == 'cyan' and C.white or (opts.nav and Color3.fromRGB(191, 198, 211) or C.white)
     end
 
     palette(theme)
@@ -586,7 +526,7 @@ buttonClickSound = new('Sound', gui, {
     PlaybackSpeed = 1.05,
 })
 
-local W, H = 1090, 624
+local W, H = 900, 624
 local outer = new('Frame', gui, {
     Name = 'DragWindow',
     AnchorPoint = Vector2.new(0.5, 0.5),
@@ -609,20 +549,6 @@ function PALETTES.setBackgroundOpacity(percent)
     end
 end
 
-local backdropGlow = new('ImageLabel', outer, {
-    Name = 'BackdropGlow',
-    AnchorPoint = Vector2.new(0.5, 0.5),
-    Position = UDim2.fromScale(0.5, 0.5),
-    Size = UDim2.fromOffset(930, 530),
-    BackgroundTransparency = 1,
-    Image = 'rbxasset://textures/ui/GuiImagePlaceholder.png',
-    ImageColor3 = Color3.fromRGB(62, 115, 196),
-    ImageTransparency = 0.93,
-    ScaleType = Enum.ScaleType.Slice,
-    SliceCenter = Rect.new(10, 10, 10, 10),
-    ZIndex = 0,
-})
-
 local main = new('Frame', outer, {
     Name = 'LayoutRoot',
     Position = UDim2.fromOffset(0, 0),
@@ -632,30 +558,46 @@ local main = new('Frame', outer, {
     ZIndex = 2,
 })
 
-local shell = panel(main, 205, 0, 680, 612, C.slate, 3)
+local shell = panel(main, 206, 5, 676, 606, C.slate, 3)
 shell.Name = 'WindowBackdrop'
-shell.BackgroundTransparency = 0.02
+shell.BackgroundTransparency = 0.01
 PALETTES.registerBackdrop(shell)
 new('UIGradient', shell, {
     Rotation = 90,
-    Color = ColorSequence.new(Color3.fromRGB(29, 36, 53), Color3.fromRGB(14, 18, 28)),
+    Color = ColorSequence.new(Color3.fromRGB(25, 28, 37), Color3.fromRGB(18, 20, 27)),
 })
 
 local content = panel(main, 219, 73, 651, 476, C.dark, 5)
 content.Name = 'ContentBackdrop'
-content.BackgroundTransparency = 0.08
+content.BackgroundTransparency = 0.02
 PALETTES.registerBackdrop(content)
-new('UIGradient', content, {
-    Rotation = 90,
-    Color = ColorSequence.new(Color3.fromRGB(18, 22, 34), Color3.fromRGB(11, 14, 22)),
+
+local leftPlate = panel(main, 5, 5, 196, 606, C.inner, 6)
+leftPlate.Name = 'SidebarBackdrop'
+leftPlate.BackgroundTransparency = 0.015
+PALETTES.registerBackdrop(leftPlate)
+
+new('Frame', main, {
+    Name = 'SidebarDivider',
+    Position = UDim2.fromOffset(201, 15),
+    Size = UDim2.fromOffset(2, 585),
+    BackgroundColor3 = Color3.fromRGB(52, 57, 73),
+    BackgroundTransparency = 0.3,
+    BorderSizePixel = 0,
+    ZIndex = 7,
 })
 
-local leftPlate = panel(main, 5, 72, 193, 486, C.inner, 6)
-leftPlate.BackgroundTransparency = 0.06
-PALETTES.registerBackdrop(leftPlate)
-local rightPlate = panel(main, 892, 72, 193, 486, C.inner, 6)
-rightPlate.BackgroundTransparency = 0.06
-PALETTES.registerBackdrop(rightPlate)
+local brandPlate = panel(main, 15, 15, 42, 43, C.cyanLo, 12)
+local brandLabel = label(brandPlate, 'IX', 0, 0, 42, 43, 16, {z = 15, align = Enum.TextXAlignment.Center, outline = false, font = Enum.Font.GothamBlack})
+label(main, 'IXURT', 66, 13, 125, 27, 22, {z = 14, font = Enum.Font.GothamBlack, outline = false})
+label(main, 'STEAL AN EGG', 67, 40, 126, 19, 10, {z = 14, color = C.muted, outline = false})
+new('Frame', main, {
+    Position = UDim2.fromOffset(18, 66),
+    Size = UDim2.fromOffset(170, 1),
+    BackgroundColor3 = Color3.fromRGB(54, 59, 72),
+    BorderSizePixel = 0,
+    ZIndex = 13,
+})
 
 local ambient = new('Frame', main, {
     Name = 'AmbientFX',
@@ -707,67 +649,65 @@ new('UIGradient', scanning, {
 
 local header = new('Frame', main, {
     Name = 'DragHeader',
-    Position = UDim2.fromOffset(210, 6),
-    Size = UDim2.fromOffset(670, 58),
-    BackgroundColor3 = C.white,
+    Position = UDim2.fromOffset(210, 9),
+    Size = UDim2.fromOffset(670, 57),
+    BackgroundColor3 = C.inner,
     BorderSizePixel = 0,
     ClipsDescendants = true,
     Active = true,
     ZIndex = 25,
 })
-corner(header, 12)
-gradient(header, { Color3.fromRGB(53, 79, 144), Color3.fromRGB(79, 52, 165), Color3.fromRGB(45, 124, 177) })
-local headerStroke = stroke(header, 1.5)
-headerStroke.Color = Color3.fromRGB(64, 93, 139)
-local movingCheckers = checkers(header, 670, 58, 18, 0.90, 26)
+corner(header, 11)
+local headStroke = stroke(header, 1.2)
+headStroke.Color = Color3.fromRGB(44, 48, 60)
+local movingCheckers = checkers(header, 670, 57, 22, 0.984, 26)
 
-new('Frame', header, {
-    Position = UDim2.fromOffset(14, 13),
-    Size = UDim2.fromOffset(6, 32),
-    BackgroundColor3 = Color3.fromRGB(186, 246, 255),
+local headerAccent = new('Frame', header, {
+    Position = UDim2.fromOffset(13, 13),
+    Size = UDim2.fromOffset(4, 30),
+    BackgroundColor3 = C.cyan,
     BorderSizePixel = 0,
-    ZIndex = 30,
+    ZIndex = 28,
 })
-corner(header:FindFirstChildOfClass('Frame'), 4)
-label(header, 'IXURT', 30, 6, 300, 28, 27, { z = 30, font = Enum.Font.GothamBlack })
-label(header, 'ORIGINAL REDESIGN', 32, 31, 210, 17, 10, { z = 30, color = Color3.fromRGB(213, 221, 255), outline = false })
+corner(headerAccent, 3)
+local sectionTitle = label(header, 'Home', 29, 8, 265, 24, 18, {z = 30, font = Enum.Font.GothamBold, outline = false})
+sectionTitle.Name = 'IXURTSectionTitle'
+label(header, 'IXURT / STEAL AN EGG', 30, 31, 280, 16, 10, {z = 30, color = C.muted, outline = false})
 
-local statusChip = panel(header, 452, 9, 147, 39, C.inner, 31)
-statusChip.BackgroundTransparency = 0.25
+local statusChip = panel(header, 445, 11, 150, 35, C.dark, 30)
 local chipStroke = statusChip:FindFirstChildOfClass('UIStroke')
-if chipStroke then chipStroke.Color = Color3.fromRGB(150, 214, 255) chipStroke.Transparency = 0.18 end
-label(statusChip, 'STEAL AN EGG', 11, 5, 122, 15, 10, { z = 33, color = C.muted, outline = false, align = Enum.TextXAlignment.Center })
-label(statusChip, 'V1', 0, 16, 147, 18, 14, { z = 33, align = Enum.TextXAlignment.Center })
+if chipStroke then chipStroke.Color = Color3.fromRGB(45, 51, 64) end
+new('Frame', statusChip, {
+    Position = UDim2.fromOffset(11, 13), Size = UDim2.fromOffset(8, 8),
+    BackgroundColor3 = C.greenHi, BorderSizePixel = 0, ZIndex = 33,
+})
+local dot = statusChip:FindFirstChildOfClass('Frame')
+if dot then corner(dot, 8) end
+label(statusChip, 'IXURT  •  READY', 25, 6, 118, 23, 11, {z = 33, color = C.white, outline = false})
 
-local close = beveled(header, 'X', 610, 7, 49, 44, 'red', { z = 32, fontSize = 24, checkers = false })
-local divider = new('Frame', main, {
-    Position = UDim2.fromOffset(211, 66),
-    Size = UDim2.fromOffset(668, 2),
-    BackgroundColor3 = Color3.fromRGB(63, 93, 139),
-    BackgroundTransparency = 0.15,
-    BorderSizePixel = 0,
-    ZIndex = 22,
+local close = beveled(header, 'X', 613, 9, 43, 41, 'red', {z = 32, fontSize = 19, checkers = false})
+new('Frame', main, {
+    Position = UDim2.fromOffset(216, 67), Size = UDim2.fromOffset(658, 1),
+    BackgroundColor3 = Color3.fromRGB(41, 49, 64), BorderSizePixel = 0, ZIndex = 22,
 })
 
 local navSides = {
     left = new('Frame', main, {
         Name = 'LeftNavigation',
-        Position = UDim2.fromOffset(5, 72),
+        Position = UDim2.fromOffset(6, 75),
         Size = UDim2.fromOffset(193, 486),
         BackgroundTransparency = 1,
         ZIndex = 8,
     }),
     right = new('Frame', main, {
         Name = 'RightNavigation',
-        Position = UDim2.fromOffset(892, 72),
+        Position = UDim2.fromOffset(6, 75),
         Size = UDim2.fromOffset(193, 486),
         BackgroundTransparency = 1,
         ZIndex = 8,
     }),
 }
 
-label(navSides.left, 'MAIN', 14, -1, 110, 18, 10, { z = 14, color = C.muted, outline = false })
-label(navSides.right, 'SYSTEM', 14, -1, 110, 18, 10, { z = 14, color = C.muted, outline = false })
 
 return {
     getExecutorAPI = getExecutorAPI,
